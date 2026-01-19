@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PuntoCrédito Pro v5 - Gestión Total</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .animate-fade { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Estilos de botones de navegación mejorados */
+        .nav-btn-active { 
+            background-color: #059669 !important; 
+            color: white !important; 
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .nav-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Efecto de pulsación profesional */
+        button:active { transform: scale(0.97); }
+
+        .logo-container { display: flex; align-items: center; }
+        .logo-text { margin-left: 12px; line-height: 1.2; }
+        .logo-title { font-size: 20px; font-weight: bold; color: #ffffff; }
+        .logo-title span { color: #10b981; }
+        .logo-slogan { font-size: 10px; color: #f59e0b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        #login-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <div id="login-overlay">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border border-slate-100">
+            <div class="flex justify-center mb-4">
+                <svg width="60" height="60" viewBox="0 0 100 100">
+                    <path d="M50 5 C30 5 15 20 15 40 C15 65 50 95 50 95 C50 95 85 65 85 40 C85 20 70 5 50 5Z" fill="#16a34a"/>
+                    <text x="50" y="55" text-anchor="middle" font-size="30" font-weight="bold" fill="white">$</text>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Iniciar Sesión</h2>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1">Usuario</label>
+                    <input type="text" id="user_login" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 transition-colors" placeholder="admin">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1">Contraseña</label>
+                    <input type="password" id="pass_login" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 transition-colors" placeholder="****">
+                </div>
+                <button onclick="checkLogin()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-200 transition-all">
+                    Entrar al Sistema
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-40">
+            <div class="p-6 border-b border-slate-800">
+                <div class="logo-container">
+                    <svg width="40" height="40" viewBox="0 0 100 100">
+                        <path d="M50 5 C30 5 15 20 15 40 C15 65 50 95 50 95 C50 95 85 65 85 40 C85 20 70 5 50 5Z" fill="#16a34a"/>
+                        <circle cx="50" cy="40" r="22" fill="#dcfce7"/>
+                        <text x="50" y="47" text-anchor="middle" font-size="26" font-weight="bold" fill="#15803d">$</text>
+                    </svg>
+                    <div class="logo-text">
+                        <div class="logo-title">Punto <span>Crédito</span></div>
+                        <div class="logo-slogan">Solvencia</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mx-4 mt-6 p-4 bg-slate-800/40 border border-slate-700/50 rounded-2xl">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Balance Total</p>
+                <p id="sidebarTotal" class="text-xl font-bold text-emerald-400 leading-none mt-1">$0.00</p>
+                <p class="text-[9px] text-slate-500 mt-2 font-medium">(Capital + Ganancias)</p>
+            </div>
+            
+            <nav class="flex-grow p-4 space-y-2 mt-4" id="mainNav">
+                <button onclick="showSection('dashboard', this)" class="nav-btn nav-btn-active w-full flex items-center p-3 rounded-xl"><i class="fas fa-home mr-3"></i> Dashboard</button>
+                <button onclick="showSection('clients', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-users mr-3"></i> Clientes</button>
+                <button onclick="showSection('investors', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-hand-holding-heart mr-3"></i> Aportantes</button>
+                <button onclick="showSection('config', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-cog mr-3"></i> Configuración</button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-slate-500 text-xs hover:text-red-400 transition-colors py-2">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-grow ml-64 p-10">
+            <section id="section-dashboard" class="content-section animate-fade">
+                <header class="flex justify-between items-center mb-10">
+                    <div><h1 class="text-3xl font-extrabold text-slate-800">Panel Financiero</h1><p class="text-slate-500 text-sm">Resumen de capital y rentabilidad.</p></div>
+                    <button id="newLoanBtn" onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-emerald-100 transition-all flex items-center gap-2">
+                        <i class="fas fa-plus-circle"></i> Nuevo Préstamo
+                    </button>
+                </header>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Capital Disponible</p><p id="statAvailable" class="text-xl font-bold text-slate-800">$0.00</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Capital Prestado</p><p id="statLent" class="text-xl font-bold text-orange-600">$0.00</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative">
+                        <div class="flex justify-between items-center mb-1"><p class="text-slate-400 text-[10px] font-bold uppercase">Intereses Cobrados</p><button onclick="resetEarnings()" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-undo-alt text-[10px]"></i></button></div>
+                        <p id="statTotalEarned" class="text-xl font-bold text-emerald-600">$0.00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Préstamos Activos</p><p id="statActiveCount" class="text-xl font-bold text-indigo-600">0</p></div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b border-slate-100">
+                            <tr><th class="p-4 text-xs font-bold text-slate-400 uppercase">Cliente / CIP</th><th class="p-4 text-xs font-bold text-slate-400 uppercase">Capital Pendiente</th><th class="p-4 text-xs font-bold text-slate-400 uppercase text-center">Interés %</th><th class="p-4 text-xs font-bold text-slate-400 uppercase text-right">Interés Ganancia</th><th class="p-4 text-xs font-bold text-slate-400 uppercase text-center">Acciones</th></tr>
+                        </thead>
+                        <tbody id="loanTableBody" class="divide-y divide-slate-50 text-sm"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="section-clients" class="content-section hidden animate-fade">
+                <header class="mb-10"><h1 class="text-3xl font-extrabold text-slate-800">Base de Clientes</h1></header>
+                <div id="clientsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <section id="section-investors" class="content-section hidden animate-fade">
+                <header class="flex justify-between items-center mb-10">
+                    <div><h1 class="text-3xl font-extrabold text-slate-800">Aportantes</h1><p class="text-slate-500 text-sm">Distribución proporcional del capital.</p></div>
+                    <button onclick="openInvestorModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-100 transition-all flex items-center gap-2">
+                        <i class="fas fa-user-plus"></i> Registrar Aportante
+                    </button>
+                </header>
+                <div id="investorsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <section id="section-config" class="content-section hidden animate-fade">
+                <h1 class="text-2xl font-bold mb-6 text-slate-800 font-extrabold">Configuración del Sistema</h1>
+                
+                <div class="bg-white p-8 rounded-3xl shadow-sm mb-6 border border-slate-100 max-w-2xl">
+                    <h2 class="text-sm font-bold text-indigo-600 uppercase mb-4 flex items-center gap-2"><i class="fas fa-user-shield"></i> Gestión de Usuarios</h2>
+                    <div class="space-y-3">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs mb-4">
+                                <thead class="bg-slate-50 border-b">
+                                    <tr>
+                                        <th class="p-2 font-bold uppercase text-slate-400">Usuario</th>
+                                        <th class="p-2 font-bold uppercase text-slate-400">Contraseña</th>
+                                        <th class="p-2 font-bold uppercase text-slate-400">Rol</th>
+                                        <th class="p-2 font-bold uppercase text-slate-400 text-right">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user_list_admin" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                        <div class="pt-4 border-t border-slate-100 space-y-3">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Crear nuevo acceso</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" id="nu_name" placeholder="Usuario" class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-sm focus:border-indigo-400 outline-none">
+                                <input type="text" id="nu_pass" placeholder="Contraseña" class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-sm focus:border-indigo-400 outline-none">
+                            </div>
+                            <select id="nu_role" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200 text-sm outline-none">
+                                <option value="admin">Administrador (Acceso Total)</option>
+                                <option value="usuario">Usuario</option>
+                            </select>
+                            <div class="grid grid-cols-2 gap-2 mt-2 text-sm text-slate-600">
+                                <label class="flex items-center gap-2"><input type="checkbox" id="perm_dashboard" checked> Ver Dashboard</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" id="perm_clients" checked> Ver Clientes</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" id="perm_investors" checked> Ver Aportantes</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" id="perm_config" checked> Ver Config</label>
+                            </div>
+                            <button onclick="createUser()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold text-sm transition-all shadow-md">Registrar Usuario</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-3xl shadow-sm max-w-lg border border-slate-100">
+                    <p class="text-xs text-slate-400 mb-4 font-medium">Zona de peligro: Esta acción borrará todos los datos almacenados localmente.</p>
+                    <button onclick="resetApp()" class="w-full py-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all border border-red-100">Reiniciar Sistema</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="investorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[400px] shadow-2xl border border-slate-100">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Nuevo Aportante</h2>
+            <div class="space-y-4">
+                <input type="text" id="i_name" placeholder="Nombre completo" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500">
+                <input type="number" id="i_amount" placeholder="Monto inicial $" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200 outline-none focus:border-indigo-500">
+                <button onclick="saveInvestor()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-100 transition-all">Registrar Aportante</button>
+                <button onclick="closeInvestorModal()" class="w-full text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loanModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[420px] shadow-2xl border border-slate-100">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Gestionar Préstamo</h2>
+            <div class="space-y-4">
+                <select id="m_select_client" onchange="fillClientData()" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200 text-sm font-medium outline-none"><option value="">-- Nuevo Cliente --</option></select>
+                <input type="text" id="m_name" placeholder="Nombre" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <input type="text" id="m_cip" placeholder="CIP" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <input type="text" id="m_phone" placeholder="WhatsApp" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Monto $</label>
+                        <input type="number" id="m_amount" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Interés %</label>
+                        <input type="number" id="m_interest" class="w-full bg-slate-50 p-3 rounded-xl border border-slate-200" value="10">
+                    </div>
+                </div>
+                <button onclick="saveLoan()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-100 transition-all">Confirmar Operación</button>
+                <button onclick="closeModal()" class="w-full text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial Modal (cliente) -->
+    <div id="historyModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-3xl w-[800px] max-w-full shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="historyModalTitle" class="text-2xl font-bold text-slate-800">Historial</h3>
+                <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-700"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="overflow-y-auto max-h-[60vh]">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 border-b">
+                        <tr>
+                            <th class="p-2 text-xs font-bold text-slate-400 uppercase">Fecha</th>
+                            <th class="p-2 text-xs font-bold text-slate-400 uppercase">Tipo</th>
+                            <th class="p-2 text-xs font-bold text-slate-400 uppercase text-right">Monto</th>
+                            <th class="p-2 text-xs font-bold text-slate-400 uppercase">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyModalBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+            <div class="mt-4 text-right">
+                <button onclick="closeHistoryModal()" class="px-4 py-2 bg-slate-50 text-slate-800 rounded-lg shadow-sm hover:shadow-md">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Modal -->
+    <div id="invoiceModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-3xl w-[760px] max-w-full shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="invoiceTitle" class="text-2xl font-bold text-slate-800">Factura</h3>
+                <button onclick="closeInvoiceModal()" class="text-slate-400 hover:text-slate-700"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="invoiceContent" class="text-sm text-slate-700">
+                <!-- invoice will be injected here -->
+            </div>
+            <div class="mt-4 flex justify-end gap-3">
+                <button onclick="printInvoice()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg shadow hover:shadow-md">Imprimir / Descargar PDF</button>
+                <button onclick="closeInvoiceModal()" class="px-4 py-2 bg-slate-50 text-slate-800 rounded-lg">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ESTADO INICIAL ---
+        let rawData = localStorage.getItem('puntocredito_v5');
+        let state = rawData ? JSON.parse(rawData) : { 
+            earnings: 0, 
+            loans: [], 
+            clientsDatabase: [], 
+            investors: [], 
+            paymentHistory: [],
+            users: [{ user: 'admin', pass: '1515', role: 'admin' }] 
+        };
+        
+        if(!state.users) state.users = [{ user: 'admin', pass: '1515', role: 'admin' }];
+
+        // --- SOLUCIÓN AL ERROR DE GUARDADO ---
+        // Se agregaron validaciones para que si una función no existe aún, no rompa el código
+        function saveState() {
+            localStorage.setItem('puntocredito_v5', JSON.stringify(state));
+            
+            // Solo ejecuta si la función existe
+            if (typeof renderDashboard === 'function') renderDashboard();
+            if (typeof renderClients === 'function') renderClients();
+            if (typeof renderInvestors === 'function') renderInvestors();
+            if (typeof renderLoanTable === 'function') renderLoanTable();
+            if (typeof fillClientSelect === 'function') fillClientSelect();
+            if (typeof renderUserList === 'function') renderUserList();
+
+            // Actualizar balance en sidebar
+            const totalCap = state.investors.reduce((acc, i) => acc + (i.amount || 0), 0);
+            const sidebarElement = document.getElementById('sidebarTotal');
+            if(sidebarElement) {
+                sidebarElement.innerText = `$${(totalCap + (state.earnings || 0)).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            }
+        }
+
+        // --- GESTIÓN DE USUARIOS ---
+        function checkLogin() {
+            const u = document.getElementById('user_login').value;
+            const p = document.getElementById('pass_login').value;
+            const user = state.users.find(x => x.user === u && x.pass === p);
+            if(user) {
+                document.getElementById('login-overlay').style.display = 'none';
+                sessionStorage.setItem('pc_logged', 'true');
+                sessionStorage.setItem('pc_role', user.role);
+                sessionStorage.setItem('pc_user', user.user);
+                // store permissions if present
+                sessionStorage.setItem('pc_perms', JSON.stringify(user.permissions || {}));
+                applyPermissionsUI();
+            } else { alert("Usuario o contraseña incorrectos"); }
+        }
+
+        function logout() { sessionStorage.clear(); location.reload(); }
+        if(sessionStorage.getItem('pc_logged')) {
+            document.getElementById('login-overlay').style.display = 'none';
+            applyPermissionsUI();
+        }
+
+        function createUser() {
+            const u = document.getElementById('nu_name').value;
+            const p = document.getElementById('nu_pass').value;
+            const r = document.getElementById('nu_role').value;
+            if(!u || !p) return alert("Completa todos los campos");
+            // read permissions checkboxes
+            const perms = {
+                dashboard: !!document.getElementById('perm_dashboard').checked,
+                clients: !!document.getElementById('perm_clients').checked,
+                investors: !!document.getElementById('perm_investors').checked,
+                config: !!document.getElementById('perm_config').checked
+            };
+            // admin always has all permissions
+            const permissions = r === 'admin' ? { dashboard:true, clients:true, investors:true, config:true } : perms;
+            state.users.push({ user: u, pass: p, role: r, permissions });
+            saveState();
+            document.getElementById('nu_name').value = '';
+            document.getElementById('nu_pass').value = '';
+            // reset checkboxes to checked
+            document.getElementById('perm_dashboard').checked = true;
+            document.getElementById('perm_clients').checked = true;
+            document.getElementById('perm_investors').checked = true;
+            document.getElementById('perm_config').checked = true;
+        }
+
+        function renderUserList() {
+            const list = document.getElementById('user_list_admin');
+            if(!list) return;
+            list.innerHTML = '';
+            state.users.forEach(u => {
+                const roleBadge = u.role === 'admin' ?
+                    '<span class="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded text-[9px] font-bold">ADMIN</span>' :
+                    '<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[9px] font-bold">USER</span>';
+                const perms = u.permissions || { dashboard: true, clients: true, investors: true, config: true };
+                const permsHtml = `
+                    <div class="text-xs text-slate-500">${perms.dashboard ? '📊' : ''} ${perms.clients ? '👥' : ''} ${perms.investors ? '🤝' : ''} ${perms.config ? '⚙️' : ''}</div>`;
+
+                list.innerHTML += `
+                    <tr>
+                        <td class="p-2 font-bold">${u.user}</td>
+                        <td class="p-2 text-slate-500 font-mono">${u.pass}</td>
+                        <td class="p-2">${roleBadge}</td>
+                        <td class="p-2">${permsHtml}</td>
+                        <td class="p-2 text-right">
+                            <button onclick="deleteUser('${u.user}')" class="text-slate-300 hover:text-red-500 transition-colors p-1">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function deleteUser(name) {
+            if(name === 'admin') return alert("No se puede eliminar el usuario raíz.");
+            if(confirm(`¿Eliminar acceso para ${name}?`)) {
+                state.users = state.users.filter(u => u.user !== name);
+                saveState();
+            }
+        }
+
+        function showSection(id, btn) {
+            // verify permissions for the current logged user
+            const permsRaw = sessionStorage.getItem('pc_perms');
+            const role = sessionStorage.getItem('pc_role');
+            let perms = null;
+            if(role === 'admin') perms = { dashboard:true, clients:true, investors:true, config:true };
+            else perms = permsRaw ? JSON.parse(permsRaw) : null;
+            const map = { dashboard: 'dashboard', clients: 'clients', investors: 'investors', config: 'config' };
+            if(perms) {
+                // map id to permission key
+                const key = id;
+                if(!perms[key]) return alert('No tienes permisos para ver esta sección');
+            }
+            document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`section-${id}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('nav-btn-active');
+                b.classList.add('text-slate-400', 'hover:bg-slate-800');
+            });
+            if(btn) btn.classList.add('nav-btn-active');
+        }
+
+        function applyPermissionsUI() {
+            const permsRaw = sessionStorage.getItem('pc_perms');
+            const role = sessionStorage.getItem('pc_role');
+            let perms = null;
+            if(role === 'admin') perms = { dashboard:true, clients:true, investors:true, config:true };
+            else perms = permsRaw ? JSON.parse(permsRaw) : null;
+            // nav buttons order: dashboard, clients, investors, config
+            const btns = document.querySelectorAll('.nav-btn');
+            if(!perms) return;
+            btns.forEach(b => {
+                const text = b.innerText.toLowerCase();
+                if(text.includes('dashboard') && !perms.dashboard) b.style.display = 'none';
+                if(text.includes('clientes') && !perms.clients) b.style.display = 'none';
+                if((text.includes('aportantes') || text.includes('aportante')) && !perms.investors) b.style.display = 'none';
+                if(text.includes('config') && !perms.config) b.style.display = 'none';
+            });
+        }
+
+        // --- FUNCIONES DE APORTANTES ---
+        function openInvestorModal() { document.getElementById('investorModal').classList.remove('hidden'); }
+        function closeInvestorModal() { document.getElementById('investorModal').classList.add('hidden'); }
+
+        function saveInvestor() {
+            const name = document.getElementById('i_name').value;
+            const amount = parseFloat(document.getElementById('i_amount').value);
+            if(!name || isNaN(amount)) return alert("Datos inválidos");
+            state.investors.push({ id: Date.now(), name, amount, createdAt: new Date().toISOString(), withdrawn: 0 });
+            saveState(); 
+            closeInvestorModal();
+            document.getElementById('i_name').value = '';
+            document.getElementById('i_amount').value = '';
+        }
+
+        function renderInvestors() {
+            const grid = document.getElementById('investorsGrid'); 
+            if(!grid) return;
+            grid.innerHTML = '';
+            const n = state.investors.length;
+            const perInvestorEarning = n > 0 ? ((state.earnings || 0) / n) : 0;
+
+            state.investors.forEach(inv => {
+                const sharePercent = n > 0 ? (100 / n) : 0;
+                grid.innerHTML += `
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-lg">${inv.name}</h3>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">ID: ${inv.id}</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Capital</div>
+                                <div class="text-xl font-bold text-slate-900">$${(inv.amount||0).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1 uppercase"><span>Participación</span><span>${sharePercent.toFixed(1)}%</span></div>
+                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                <div style="width:${sharePercent}%" class="h-full bg-emerald-500"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 p-3 bg-slate-50 rounded-2xl">
+                            <div>
+                                <div class="text-xs font-bold text-slate-500 uppercase tracking-tighter">Ganancia Estimada</div>
+                                <div class="font-bold text-emerald-600">$${perInvestorEarning.toFixed(2)}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs font-bold text-slate-500 uppercase tracking-tighter">Total (Aporte + Gan.)</div>
+                                <div class="font-bold text-slate-800">$${((inv.amount||0) + perInvestorEarning).toFixed(2)}</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mt-4">
+                            <button onclick="injectInvestor(${inv.id})" class="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow-md transition-all"> <i class="fas fa-plus"></i> Inyectar</button>
+                            <button onclick="deleteInvestor(${inv.id})" class="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 text-sm font-semibold rounded-lg shadow-sm hover:bg-red-600 hover:text-white transition-all"> <i class="fas fa-trash"></i> Eliminar</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function deleteInvestor(id) {
+            if(!confirm("¿Eliminar este aportante? Se eliminará su capital y su parte de las ganancias.")) return;
+            const idx = state.investors.findIndex(i => i.id === id);
+            if(idx === -1) return;
+            // calcular ganancia por aportante según reparto igualitario actual
+            const n = state.investors.length;
+            const perInvestorEarning = n > 0 ? ((state.earnings || 0) / n) : 0;
+            // restar la porción del aportante de las ganancias globales
+            state.earnings = Math.max(0, (state.earnings || 0) - perInvestorEarning);
+            // eliminar entradas relacionadas al aportante en el historial
+            state.paymentHistory = state.paymentHistory.filter(h => String(h.investorId || '') !== String(id));
+            // eliminar el aportante
+            state.investors = state.investors.filter(i => i.id !== id);
+            saveState();
+        }
+
+        // Inyectar capital a un aportante
+        function injectInvestor(id) {
+            const inv = state.investors.find(i => i.id === id);
+            if(!inv) return alert('Aportante no encontrado');
+            const raw = prompt(`Inyectar capital a ${inv.name} (monto en $):`, '0');
+            const amount = parseFloat(raw);
+            if(isNaN(amount) || amount <= 0) return alert('Monto inválido');
+            inv.amount = (inv.amount || 0) + amount;
+            state.paymentHistory.push({ id: Date.now(), investorId: id, date: new Date().toISOString(), type: 'inyeccion', amount: amount, note: 'Inyección de capital' });
+            saveState();
+        }
+
+        // Funciones faltantes para evitar errores
+        function renderDashboard() {
+            const totalAportado = state.investors.reduce((acc, i) => acc + (i.amount || 0), 0);
+            const lentTotal = state.loans.reduce((acc, l) => acc + (l.currentPrincipal || 0), 0);
+            const totalSystem = totalAportado + (state.earnings || 0);
+            document.getElementById('sidebarTotal').innerText = `$${totalSystem.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+            document.getElementById('statAvailable').innerText = `$${(totalAportado - lentTotal).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+            document.getElementById('statLent').innerText = `$${lentTotal.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+            document.getElementById('statTotalEarned').innerText = `$${(state.earnings||0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+            const activeCount = state.loans.filter(l => !(l.closed) && (l.currentPrincipal || 0) > 0).length;
+            document.getElementById('statActiveCount').innerText = activeCount || 0;
+            // habilitar/deshabilitar botón de nuevo préstamo según capital disponible
+            const available = totalAportado - lentTotal;
+            const newBtn = document.getElementById('newLoanBtn');
+            if(newBtn) {
+                if(!available || available <= 0) {
+                    newBtn.setAttribute('disabled','disabled');
+                    newBtn.classList.add('opacity-50','cursor-not-allowed');
+                } else {
+                    newBtn.removeAttribute('disabled');
+                    newBtn.classList.remove('opacity-50','cursor-not-allowed');
+                }
+            }
+        }
+
+        function renderClients() {
+            const grid = document.getElementById('clientsGrid'); if(!grid) return;
+            grid.innerHTML = '';
+            state.clientsDatabase.forEach(c => {
+                const clientLoans = state.loans.filter(l => String(l.clientId) === String(c.id));
+                const totalDebt = clientLoans.reduce((acc, l) => acc + (l.currentPrincipal || 0), 0);
+                const loanCount = clientLoans.length;
+                grid.innerHTML += `
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-lg">${c.name}</h3>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">CIP: ${c.cip || ''}</p>
+                                <p class="text-[10px] text-slate-400 font-medium">Veces solicitado: ${loanCount}</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Deuda</div>
+                                <div class="text-xl font-bold text-slate-900">$${totalDebt.toFixed(2)}</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1 uppercase"><span>Préstamos</span><span>${loanCount}</span></div>
+                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                <div style="width:${Math.min(100, loanCount * 20)}%" class="h-full bg-indigo-500"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mt-4">
+                            <button onclick="promptEditClient('${c.id}')" class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow-md transition-all"> <i class="fas fa-edit text-xs"></i> Editar</button>
+                            <button onclick="confirmDeleteClient('${c.id}')" class="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 text-sm font-semibold rounded-lg shadow-sm hover:bg-red-600 hover:text-white transition-all"> <i class="fas fa-trash-alt text-xs"></i> Eliminar</button>
+                            <button onclick="openHistoryModal(${c.id})" class="flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg shadow-sm hover:shadow-md transition-all"> <i class="fas fa-list text-xs"></i> Historial</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function fillClientSelect() {
+            const sel = document.getElementById('m_select_client');
+            if(!sel) return;
+            sel.innerHTML = '<option value="">-- Nuevo Cliente --</option>';
+            state.clientsDatabase.forEach(c => {
+                sel.innerHTML += `<option value="${c.id}">${c.name} / ${c.cip || ''}</option>`;
+            });
+        }
+
+        function renderLoanTable() {
+            const tbody = document.getElementById('loanTableBody'); if(!tbody) return;
+            tbody.innerHTML = '';
+            state.loans.filter(l => !(l.closed) && (l.currentPrincipal || 0) > 0).forEach(l => {
+                const expectedInterest = (l.currentPrincipal || 0) * ((l.interestPercent || 0) / 100);
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-4">${l.clientName} <div class="text-xs text-slate-400">${l.cip || ''}</div></td>
+                        <td class="p-4">$${(l.currentPrincipal||0).toFixed(2)}</td>
+                        <td class="p-4 text-center">${(l.interestPercent||0)}%</td>
+                        <td class="p-4 text-right">$${expectedInterest.toFixed(2)}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="payLoan('${l.id}')" title="Cobrar" class="px-3 py-2 bg-amber-500 text-white rounded-full hover:bg-amber-600 transition-colors">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        // Editar cliente mediante prompts simples (puedes reemplazar por modales luego)
+        function promptEditClient(id) {
+            const client = state.clientsDatabase.find(c => String(c.id) === String(id));
+            if(!client) return alert('Cliente no encontrado');
+            const name = prompt('Nombre:', client.name) || client.name;
+            const cip = prompt('CIP:', client.cip || '') || client.cip || '';
+            const phone = prompt('Teléfono/WhatsApp:', client.phone || '') || client.phone || '';
+            client.name = name;
+            client.cip = cip;
+            client.phone = phone;
+            saveState();
+        }
+
+        function confirmDeleteClient(id) {
+            if(!confirm('¿Eliminar este cliente? Esta acción no eliminará sus préstamos registrados.')) return;
+            state.clientsDatabase = state.clientsDatabase.filter(c => String(c.id) !== String(id));
+            saveState();
+        }
+
+        function openHistoryModal(clientId) {
+            const client = state.clientsDatabase.find(c => String(c.id) === String(clientId)) || { name: 'Cliente' };
+            const entries = state.paymentHistory.filter(h => String(h.clientId) === String(clientId));
+            const tbody = document.getElementById('historyModalBody');
+            const title = document.getElementById('historyModalTitle');
+            if(!tbody || !title) return alert('Historial no disponible');
+            title.innerText = `Historial - ${client.name}`;
+            tbody.innerHTML = '';
+            if(!entries || entries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">No hay movimientos registrados para este cliente.</td></tr>`;
+            } else {
+                // ordenar por fecha descendente
+                entries.sort((a,b) => new Date(b.date) - new Date(a.date));
+                entries.forEach(e => {
+                    const date = new Date(e.date).toLocaleString();
+                    const type = (e.type || '').toUpperCase();
+                    const amount = (e.amount || 0).toFixed(2);
+                    const note = e.note || (e.details ? JSON.stringify(e.details) : '');
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="p-2 align-top text-xs text-slate-600">${date}</td>
+                            <td class="p-2 align-top text-xs font-semibold text-slate-700">${type}</td>
+                            <td class="p-2 align-top text-right text-xs font-bold text-slate-800">$${amount}</td>
+                            <td class="p-2 align-top text-xs text-slate-600">${note}</td>
+                        </tr>`;
+                });
+            }
+            document.getElementById('historyModal').classList.remove('hidden');
+        }
+
+        function closeHistoryModal() { document.getElementById('historyModal').classList.add('hidden'); }
+
+        // Invoice helpers
+        function fillInvoiceModal(data) {
+            const container = document.getElementById('invoiceContent');
+            if(!container) return;
+            const date = new Date(data.date).toLocaleString();
+            let itemsHtml = '';
+            data.items.forEach(it => {
+                itemsHtml += `
+                    <tr class="border-b border-slate-100">
+                        <td class="p-3 text-sm text-slate-700">${it.desc}</td>
+                        <td class="p-3 text-right text-sm font-medium text-slate-800">$${(it.amount||0).toFixed(2)}</td>
+                    </tr>`;
+            });
+
+            container.innerHTML = `
+                <div class="bg-white p-6" style="font-family: Inter, system-ui, -apple-system, 'Plus Jakarta Sans', sans-serif;">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 bg-emerald-600 rounded-xl flex items-center justify-center">
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2L15 8H21L16.5 12.5L18.5 19L12 15.5L5.5 19L7.5 12.5L3 8H9L12 2Z" fill="white"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold text-slate-800">Punto Crédito</div>
+                                <div class="text-xs text-slate-500">Soluciones financieras - Comprobante de pago</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">Factura #: <span class="font-bold text-slate-800">${data.invoiceId}</span></div>
+                            <div class="text-xs text-slate-500">Fecha: <span class="font-bold text-slate-800">${date}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <div class="text-xs text-slate-500">Cliente</div>
+                            <div class="font-semibold text-slate-800">${data.clientName}</div>
+                            <div class="text-xs text-slate-500">CIP: ${data.clientCIP}</div>
+                            <div class="text-xs text-slate-500">Tel: ${data.clientPhone}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">Préstamo ID</div>
+                            <div class="font-semibold text-slate-800">${data.loanId}</div>
+                            <div class="text-xs text-slate-500">Saldo Pendiente</div>
+                            <div class="font-semibold text-slate-800">$${(data.balance||0).toFixed(2)}</div>
+                        </div>
+                    </div>
+
+                    <div class="border rounded-lg overflow-hidden">
+                        <div class="bg-slate-50 p-3 text-xs font-bold text-slate-500">Detalles del pago</div>
+                        <table class="w-full">
+                            <thead class="bg-white">
+                                <tr>
+                                    <th class="text-left p-3 text-xs text-slate-500">Descripción</th>
+                                    <th class="text-right p-3 text-xs text-slate-500">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white">
+                                ${itemsHtml}
+                            </tbody>
+                        </table>
+                        <div class="p-4 flex justify-end items-center gap-6 bg-white">
+                            <div class="text-sm text-slate-500">Total</div>
+                            <div class="text-2xl font-bold text-slate-800">$${(data.total||0).toFixed(2)}</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex justify-between items-center text-xs text-slate-500">
+                        <div>Documento generado por Punto Crédito. Si necesitas soporte, contacta al administrador.</div>
+                        <div>RUC/ID: --</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeInvoiceModal() { document.getElementById('invoiceModal').classList.add('hidden'); }
+
+        function printInvoice() {
+            const el = document.getElementById('invoiceContent');
+            if(!el) return alert('Contenido de factura no disponible');
+            const opt = { margin: 0.5, filename: `factura_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            // confirmar impresión/descarga
+            if(confirm('¿Deseas imprimir o descargar la factura en PDF?')) {
+                html2pdf().set(opt).from(el).save();
+            }
+        }
+
+        function openModal() {
+            // comprobar capital disponible antes de abrir el modal
+            const totalAportado = state.investors.reduce((acc, i) => acc + (i.amount || 0), 0);
+            const lentTotal = state.loans.reduce((acc, l) => acc + (l.currentPrincipal || 0), 0);
+            const available = totalAportado - lentTotal;
+            if(!available || available <= 0) return alert('No hay capital disponible para nuevos préstamos.');
+            fillClientSelect(); document.getElementById('loanModal').classList.remove('hidden');
+        }
+        function closeModal() { document.getElementById('loanModal').classList.add('hidden'); }
+
+        function resetEarnings() { if(confirm("¿Reiniciar ganancias?")) { state.earnings = 0; saveState(); } }
+
+        // Guardar nuevo préstamo
+        function saveLoan() {
+            const sel = document.getElementById('m_select_client');
+            const selectedId = sel ? sel.value : '';
+            const name = (document.getElementById('m_name') || {}).value || '';
+            const cip = (document.getElementById('m_cip') || {}).value || '';
+            const phone = (document.getElementById('m_phone') || {}).value || '';
+            const amount = parseFloat((document.getElementById('m_amount') || {}).value);
+            const interest = parseFloat((document.getElementById('m_interest') || {}).value);
+            if(!name || isNaN(amount) || isNaN(interest)) return alert('Completa nombre, monto e interés');
+
+            // comprobar capital disponible antes de crear el préstamo
+            const totalAportado = state.investors.reduce((acc, i) => acc + (i.amount || 0), 0);
+            const lentTotal = state.loans.reduce((acc, l) => acc + (l.currentPrincipal || 0), 0);
+            const available = totalAportado - lentTotal;
+            if(!available || available <= 0) return alert('No hay capital disponible para nuevos préstamos.');
+            if(amount > available) return alert(`Capital disponible insuficiente: $${available.toFixed(2)}`);
+
+            let clientId = selectedId;
+            if(!clientId) {
+                clientId = Date.now();
+                state.clientsDatabase.push({ id: clientId, name, cip, phone });
+            } else {
+                const idx = state.clientsDatabase.findIndex(x => String(x.id) === String(clientId));
+                if(idx >= 0) {
+                    state.clientsDatabase[idx].name = name;
+                    state.clientsDatabase[idx].cip = cip;
+                    state.clientsDatabase[idx].phone = phone;
+                }
+            }
+
+            const loanId = Date.now() + Math.floor(Math.random()*1000);
+            const loan = {
+                id: loanId,
+                clientId: clientId,
+                clientName: name,
+                cip: cip,
+                phone: phone,
+                originalPrincipal: amount,
+                currentPrincipal: amount,
+                interestPercent: interest,
+                interestAccrued: 0,
+                closed: false,
+                createdAt: new Date().toISOString(),
+                payments: []
+            };
+            state.loans.push(loan);
+            state.paymentHistory.push({ id: Date.now(), clientId: clientId, loanId: loanId, date: new Date().toISOString(), type: 'desembolso', amount: amount, note: 'Préstamo otorgado' });
+            saveState(); closeModal();
+            // limpiar
+            if(document.getElementById('m_select_client')) document.getElementById('m_select_client').value = '';
+            if(document.getElementById('m_name')) document.getElementById('m_name').value = '';
+            if(document.getElementById('m_cip')) document.getElementById('m_cip').value = '';
+            if(document.getElementById('m_phone')) document.getElementById('m_phone').value = '';
+            if(document.getElementById('m_amount')) document.getElementById('m_amount').value = '';
+            if(document.getElementById('m_interest')) document.getElementById('m_interest').value = '10';
+        }
+
+        // Registrar pago simple: interés sobre saldo + principal
+        function payLoan(id) {
+            (async () => {
+                const loan = state.loans.find(l => String(l.id) === String(id));
+                if(!loan) return alert('Préstamo no encontrado');
+                const interestDue = loan.currentPrincipal * (loan.interestPercent/100);
+                const totalEstimate = loan.currentPrincipal + interestDue;
+                const raw = prompt(`Total estimado (principal + interés): $${totalEstimate.toFixed(2)}\nIngresa monto a pagar ($):`, totalEstimate.toFixed(2));
+                const amount = parseFloat(raw);
+                if(isNaN(amount) || amount <= 0) return alert('Monto inválido');
+                let remaining = amount;
+                const interestPayment = Math.min(interestDue, remaining);
+                if(interestPayment > 0) {
+                    loan.interestAccrued = (loan.interestAccrued || 0) + interestPayment;
+                    remaining -= interestPayment;
+                    state.earnings += interestPayment;
+                }
+                let principalPayment = 0;
+                if(remaining > 0) {
+                    principalPayment = Math.min(loan.currentPrincipal, remaining);
+                    loan.currentPrincipal = Math.max(0, loan.currentPrincipal - principalPayment);
+                    remaining -= principalPayment;
+                }
+                loan.payments.push({ id: Date.now(), date: new Date().toISOString(), amount: amount, interest: interestPayment, principal: principalPayment });
+                const paymentRecord = { id: Date.now(), clientId: loan.clientId, loanId: loan.id, date: new Date().toISOString(), type: 'pago', amount: amount, note: 'Pago recibido', details: { interest: interestPayment, principal: principalPayment } };
+                state.paymentHistory.push(paymentRecord);
+
+                // si se pagó la totalidad marcar como cerrado (se mantendrá en la base de datos, pero no en el dashboard)
+                if(loan.currentPrincipal === 0) loan.closed = true;
+
+                saveState();
+
+                // generar y mostrar factura profesional
+                const client = state.clientsDatabase.find(c => String(c.id) === String(loan.clientId)) || { name: loan.clientName || 'Cliente' };
+                const invoiceData = {
+                    invoiceId: paymentRecord.id,
+                    date: paymentRecord.date,
+                    clientName: client.name,
+                    clientCIP: client.cip || loan.cip || '',
+                    clientPhone: client.phone || loan.phone || '',
+                    loanId: loan.id,
+                    items: [
+                        { desc: `Interés (${loan.interestPercent || 0}%)`, amount: interestPayment },
+                        { desc: 'Pago a Principal', amount: principalPayment }
+                    ],
+                    total: amount,
+                    balance: loan.currentPrincipal
+                };
+                fillInvoiceModal(invoiceData);
+                document.getElementById('invoiceModal').classList.remove('hidden');
+            })();
+        }
+
+        window.onload = () => { saveState(); };
+
+        function resetApp() {
+            if(confirm("¿ESTÁS SEGURO? Se borrarán todos los datos.")) {
+                localStorage.removeItem('puntocredito_v5');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
