@@ -1,0 +1,49 @@
+[debug] [2026-02-08T00:18:09.589Z] ----------------------------------------------------------------------
+[debug] [2026-02-08T00:18:09.602Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Jahir Gaona\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2026-02-08T00:18:09.602Z] CLI Version:   15.3.1
+[debug] [2026-02-08T00:18:09.602Z] Platform:      win32
+[debug] [2026-02-08T00:18:09.602Z] Node Version:  v24.13.0
+[debug] [2026-02-08T00:18:09.603Z] Time:          Sat Feb 07 2026 19:18:09 GMT-0500 (hora estándar oriental)
+[debug] [2026-02-08T00:18:09.603Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-02-08T00:18:16.923Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-08T00:18:16.924Z] > authorizing via signed-in user (soportechagres@gmail.com)
+[debug] [2026-02-08T00:18:16.924Z] [iam] checking project prestamos-47f61 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-02-08T00:18:16.928Z] Checked if tokens are valid: true, expires at: 1770513170025
+[debug] [2026-02-08T00:18:16.928Z] Checked if tokens are valid: true, expires at: 1770513170025
+[debug] [2026-02-08T00:18:16.929Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/prestamos-47f61:testIamPermissions [none]
+[debug] [2026-02-08T00:18:16.929Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/prestamos-47f61:testIamPermissions x-goog-quota-user=projects/prestamos-47f61
+[debug] [2026-02-08T00:18:16.930Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/prestamos-47f61:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-02-08T00:18:17.342Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/prestamos-47f61:testIamPermissions 200
+[debug] [2026-02-08T00:18:17.343Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/prestamos-47f61:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-02-08T00:18:17.344Z] Checked if tokens are valid: true, expires at: 1770513170025
+[debug] [2026-02-08T00:18:17.344Z] Checked if tokens are valid: true, expires at: 1770513170025
+[debug] [2026-02-08T00:18:17.344Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/prestamos-47f61 [none]
+[debug] [2026-02-08T00:18:18.152Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/prestamos-47f61 200
+[debug] [2026-02-08T00:18:18.152Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/prestamos-47f61 {"projectId":"prestamos-47f61","projectNumber":"33940468313","displayName":"Prestamos","name":"projects/prestamos-47f61","resources":{"hostingSite":"prestamos-47f61"},"state":"ACTIVE","etag":"1_cb73577c-554b-43dc-9eb8-57fb51b75344"}
+[info] 
+[info] === Deploying to 'prestamos-47f61'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2026-02-08T00:18:18.163Z] Checked if tokens are valid: true, expires at: 1770513170025
+[debug] [2026-02-08T00:18:18.164Z] Checked if tokens are valid: true, expires at: 1770513170025
+[debug] [2026-02-08T00:18:18.164Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/prestamos-47f61/versions [none]
+[debug] [2026-02-08T00:18:18.164Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/prestamos-47f61/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-02-08T00:18:19.223Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/prestamos-47f61/versions 200
+[debug] [2026-02-08T00:18:19.223Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/prestamos-47f61/versions {"name":"projects/33940468313/sites/prestamos-47f61/versions/40beb2ad7b908c86","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[prestamos-47f61]: beginning deploy... 
+[info] i  hosting[prestamos-47f61]: found 211187 files in ./ 
+[debug] [2026-02-08T00:19:07.908Z] [hosting] uploading with 200 concurrency
+[debug] [2026-02-08T00:19:07.911Z] [hosting] hash cache [] not populated
+[debug] [2026-02-08T00:19:07.978Z] Error: EBUSY: resource busy or locked, open 'C:\Users\Jahir Gaona\ntuser.dat.LOG2'
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-02-08T00:19:07.980Z] Error: EBUSY: resource busy or locked, open 'C:\Users\Jahir Gaona\ntuser.dat.LOG1'
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-02-08T00:19:07.982Z] Error: EBUSY: resource busy or locked, open 'C:\Users\Jahir Gaona\NTUSER.DAT'
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-02-08T00:19:08.030Z] Error: EISDIR: illegal operation on a directory, read
+[error] 
+[error] Error: An unexpected error has occurred.

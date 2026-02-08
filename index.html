@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -271,23 +273,145 @@
     </div>
 
     <script>
+        // --- FIREBASE CONFIG ---
+        // Reemplaza con tu configuración de Firebase (Project Settings -> SDK config)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbkp4U4T0v5XIHDeMdfSKwdLZSTrMNQkA",
+            authDomain: "prestamos-47f61.firebaseapp.com",
+            projectId: "prestamos-47f61",
+            storageBucket: "prestamos-47f61.firebasestorage.app",
+            messagingSenderId: "33940468313",
+            appId: "1:33940468313:web:945def8ad9cb782d797748"
+        };
+        let db = null;
+
+        function isFirebaseConfigValid(cfg) {
+            if(!cfg) return false;
+            const values = Object.values(cfg);
+            return values.every(v => typeof v === 'string' && v.trim() && !v.includes('YOUR_'));
+        }
+
+        async function initFirebase() {
+            try {
+                if(!isFirebaseConfigValid(firebaseConfig)) {
+                    console.warn('Firebase no configurado. Se usará solo almacenamiento local.');
+                    return;
+                }
+                if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+            } catch (err) {
+                console.warn('Error inicializando Firebase:', err);
+            }
+        }
+
+        function userDocId(username) {
+            try {
+                return btoa(unescape(encodeURIComponent(username)));
+            } catch (e) {
+                return String(username || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+            }
+        }
+
+        async function upsertUserToFirebase(user) {
+            if(!db) return;
+            const id = userDocId(user.user);
+            await db.collection('users').doc(id).set({
+                user: user.user,
+                pass: user.pass,
+                role: user.role,
+                permissions: user.permissions || {},
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+
+        async function deleteUserFromFirebase(username) {
+            if(!db) return;
+            const id = userDocId(username);
+            await db.collection('users').doc(id).delete();
+        }
+
+        async function loadUsersFromFirebase() {
+            if(!db) return;
+            const snap = await db.collection('users').get();
+            if(snap.empty) {
+                const admin = getDefaultAdmin();
+                state.users = [admin];
+                try { await upsertUserToFirebase(admin); } catch (e) { console.warn('No se pudo guardar admin en Firebase:', e); }
+                return;
+            }
+            const users = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                if(data && data.user) users.push(data);
+            });
+            if(users.length > 0) {
+                state.users = users.map(u => {
+                    const isAdmin = (u.role || '') === 'admin';
+                    const defaultPerms = { dashboard: true, clients: true, investors: true, config: true };
+                    return {
+                        user: u.user,
+                        pass: u.pass,
+                        role: u.role || 'usuario',
+                        permissions: u.permissions || (isAdmin ? defaultPerms : {})
+                    };
+                });
+                saveState();
+            }
+        }
+
+        // Guardar y cargar el estado completo en Firebase (excepto campos volátiles)
+        async function saveStateToFirebase() {
+            if(!db) return;
+            const payload = {
+                earnings: state.earnings || 0,
+                loans: state.loans || [],
+                clientsDatabase: state.clientsDatabase || [],
+                investors: state.investors || [],
+                paymentHistory: state.paymentHistory || [],
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await db.collection('app').doc('state').set(payload, { merge: true });
+        }
+
+        async function loadStateFromFirebase() {
+            if(!db) return;
+            const doc = await db.collection('app').doc('state').get();
+            if(!doc.exists) return;
+            const data = doc.data() || {};
+            state.earnings = data.earnings || 0;
+            state.loans = data.loans || [];
+            state.clientsDatabase = data.clientsDatabase || [];
+            state.investors = data.investors || [];
+            state.paymentHistory = data.paymentHistory || [];
+        }
+
+        function getDefaultAdmin() {
+            return {
+                user: 'admin',
+                pass: '1515',
+                role: 'admin',
+                permissions: { dashboard: true, clients: true, investors: true, config: true }
+            };
+        }
+
         // --- ESTADO INICIAL ---
-        let rawData = localStorage.getItem('puntocredito_v5');
-        let state = rawData ? JSON.parse(rawData) : { 
+        let state = { 
             earnings: 0, 
             loans: [], 
             clientsDatabase: [], 
             investors: [], 
             paymentHistory: [],
-            users: [{ user: 'admin', pass: '1515', role: 'admin' }] 
+            users: [getDefaultAdmin()] 
         };
         
-        if(!state.users) state.users = [{ user: 'admin', pass: '1515', role: 'admin' }];
+        // Usuarios solo desde Firebase (no desde localStorage)
+        state.users = [getDefaultAdmin()];
 
         // --- SOLUCIÓN AL ERROR DE GUARDADO ---
         // Se agregaron validaciones para que si una función no existe aún, no rompa el código
         function saveState() {
-            localStorage.setItem('puntocredito_v5', JSON.stringify(state));
+            // Guardar en Firebase (estado completo)
+            saveStateToFirebase().catch(e => console.warn('No se pudo guardar estado en Firebase:', e));
             
             // Solo ejecuta si la función existe
             if (typeof renderDashboard === 'function') renderDashboard();
@@ -327,11 +451,15 @@
             applyPermissionsUI();
         }
 
-        function createUser() {
+        async function createUser() {
             const u = document.getElementById('nu_name').value;
             const p = document.getElementById('nu_pass').value;
             const r = document.getElementById('nu_role').value;
             if(!u || !p) return alert("Completa todos los campos");
+            if(!db) {
+                await initFirebase();
+                if(!db) return alert('Firebase no esta inicializado. Revisa la configuracion y la consola.');
+            }
             // read permissions checkboxes
             const perms = {
                 dashboard: !!document.getElementById('perm_dashboard').checked,
@@ -341,8 +469,14 @@
             };
             // admin always has all permissions
             const permissions = r === 'admin' ? { dashboard:true, clients:true, investors:true, config:true } : perms;
-            state.users.push({ user: u, pass: p, role: r, permissions });
+            const newUser = { user: u, pass: p, role: r, permissions };
+            state.users.push(newUser);
             saveState();
+            try { await upsertUserToFirebase(newUser); }
+            catch (e) {
+                console.warn('No se pudo guardar en Firebase:', e);
+                alert('Error guardando en Firebase. Revisa la consola del navegador.');
+            }
             document.getElementById('nu_name').value = '';
             document.getElementById('nu_pass').value = '';
             // reset checkboxes to checked
@@ -379,11 +513,12 @@
             });
         }
 
-        function deleteUser(name) {
+        async function deleteUser(name) {
             if(name === 'admin') return alert("No se puede eliminar el usuario raíz.");
             if(confirm(`¿Eliminar acceso para ${name}?`)) {
                 state.users = state.users.filter(u => u.user !== name);
                 saveState();
+                try { await deleteUserFromFirebase(name); } catch (e) { console.warn('No se pudo eliminar en Firebase:', e); }
             }
         }
 
@@ -866,12 +1001,20 @@
             })();
         }
 
-        window.onload = () => { saveState(); };
+        window.onload = async () => {
+            await initFirebase();
+            await loadUsersFromFirebase();
+            await loadStateFromFirebase();
+            saveState();
+        };
 
         function resetApp() {
             if(confirm("¿ESTÁS SEGURO? Se borrarán todos los datos.")) {
-                localStorage.removeItem('puntocredito_v5');
-                location.reload();
+                if(db) {
+                    db.collection('app').doc('state').delete().finally(() => location.reload());
+                } else {
+                    location.reload();
+                }
             }
         }
     </script>
